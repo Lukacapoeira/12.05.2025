@@ -1,0 +1,21 @@
+-- 🧮 Goal:
+-- For each product group, identify the top two product categories (by total revenue).
+-- Revenue is calculated as the total quantity sold multiplied by the product price.
+-- Sort the results in descending order of revenue within each product group.
+with revenue_table as(
+select
+	pg.product_group
+	,pg.category
+	,round(SUM(op.item_quantity)*p.product_price,0) as revenue
+from products p
+left join order_positions op on p.product_id = op.product_id 
+left join product_groups pg on p.group_id = pg.group_id
+  -- Grouping by price ensures accurate aggregation when the same product was sold at multiple prices
+group by 1,2,p.product_price)
+-- Rank categories by revenue within each product group
+select *from(
+select *
+	,row_number() over (partition by product_group order by revenue desc) as top
+from revenue_table)
+as rank_table
+where top <=2
